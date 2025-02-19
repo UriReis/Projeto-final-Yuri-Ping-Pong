@@ -35,14 +35,14 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(pingpong pingpong.c )
+add_executable(pingpong pingpong.c c/ssd1306.c c/func.c c/inicia.c)
 
 pico_set_program_name(pingpong "pingpong")
 pico_set_program_version(pingpong "0.1")
 
 # Modify the below lines to enable/disable output over UART/USB
-pico_enable_stdio_uart(pingpong 0)
-pico_enable_stdio_usb(pingpong 0)
+pico_enable_stdio_uart(pingpong 1)
+pico_enable_stdio_usb(pingpong 1)
 
 # Add the standard library to the build
 target_link_libraries(pingpong
@@ -54,9 +54,14 @@ target_include_directories(pingpong PRIVATE
 )
 
 # Add any user requested libraries
-target_link_libraries(pingpong 
+target_link_libraries(pingpong
+        pico_stdlib
+        hardware_i2c
+        hardware_adc
         
         )
 
 pico_add_extra_outputs(pingpong)
+
+include_directories(${CMAKE_SOURCE_DIR}/include)
 

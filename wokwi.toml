@@ -1,0 +1,5 @@
+[wokwi]
+version = 1
+firmware = 'build/pingpong.uf2'
+elf = 'build/pingpong.elf'
+
