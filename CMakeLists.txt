@@ -58,6 +58,7 @@ target_link_libraries(pingpong
         pico_stdlib
         hardware_i2c
         hardware_adc
+        hardware_pwm
         
         )
 

@@ -4,9 +4,12 @@
 #include "hardware/adc.h"
 #include "hardware/i2c.h"
 #include "hardware/timer.h"
+#include "hardware/pwm.h"
 #include "include/ssd1306.h"
 #include "include/font.h"
 #include "define.h"
+
+#define BUZZER_PIN 21 // Porta associada ao Buzzer
 
 ssd1306_t ssd; // Estrutura para controlar o display OLED
 
@@ -17,15 +20,53 @@ int player_pontos = 0;
 int cpu_pontos = 0;
 const int max_pontos = 3;
 int cpu_rebatidas = 0; // Contador de rebatidas da CPU
+bool cpu_deixando_passar = false;
+
+// Inicializa o PWM para o buzzer
+void buzzer_init() {
+    gpio_set_function(BUZZER_PIN, GPIO_FUNC_PWM);
+    
+}
+
+// Toca um tom no buzzer
+void buzz(uint freq, uint tempo) {
+  
+    uint slice_num = pwm_gpio_to_slice_num(BUZZER_PIN);
+    uint channel = pwm_gpio_to_channel(BUZZER_PIN);
+
+    // Configurando a frequência
+    uint32_t clock_freq = 125000000; 
+    uint32_t divider = clock_freq / freq / 65536 + 1; 
+    uint32_t top = clock_freq / (divider * freq);
+
+    // Configurando as repetições
+    pwm_set_clkdiv(slice_num, divider); 
+    pwm_set_wrap(slice_num, top - 1);
+    pwm_set_chan_level(slice_num, channel, top / 2);
+    pwm_set_enabled(slice_num, true);
+
+    sleep_ms(tempo);
+
+    pwm_set_enabled(slice_num, false);
+}
+
+// Desativa o PWM do buzzer completamente
+/*void buzzer_stop() {
+    uint slice_num = pwm_gpio_to_slice_num(BUZZER_PIN);
+    pwm_set_enabled(slice_num, false);
+    gpio_set_function(BUZZER_PIN, GPIO_FUNC_SIO);
+    gpio_set_dir(BUZZER_PIN, GPIO_OUT);
+    gpio_put(BUZZER_PIN, 0);
+}*/
 
 // Função de interrupção para aumentar a velocidade
 bool repeating_timer_callback(struct repeating_timer *t) {
     velocimulti += 0.1;
-    return true; // Continua a repetição do timer
+    return true;
 }
 
 void inii2() {
-    i2c_init(I2C_PORT, 400 * 1000); // Inicializa o I2C com frequência de 400 kHz
+    i2c_init(I2C_PORT, 400 * 1000);
     gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
     gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
     gpio_pull_up(I2C_SDA);
@@ -33,10 +74,10 @@ void inii2() {
     ssd1306_init(&ssd, WIDTH, HEIGHT, false, endereco, I2C_PORT);
     ssd1306_config(&ssd);
     ssd1306_send_data(&ssd);
-    ssd1306_fill(&ssd, false); // Limpa o display
+    ssd1306_fill(&ssd, false);
     ssd1306_send_data(&ssd);
+    buzzer_init(); // Inicializa o buzzer
     
-    // Configura um timer para chamar a função a cada 1 segundo
     static struct repeating_timer timer;
     add_repeating_timer_ms(1000, repeating_timer_callback, NULL, &timer);
 }
@@ -47,7 +88,6 @@ void exibir_mensagem(const char *msg) {
     ssd1306_send_data(&ssd);
     sleep_ms(3000);
 }
-
 void reset_bola() {
     ball_x = 64;
     ball_y = 32;
@@ -55,6 +95,7 @@ void reset_bola() {
     ball_dy = 0; // Mantém trajetória inicial reta
     velocimulti = 1.0; // Reseta a velocidade
     cpu_rebatidas = 0; // Reseta o contador de rebatidas da CPU
+    cpu_deixando_passar = false;
 }
 
 void verificar_vencedor() {
@@ -65,12 +106,23 @@ void verificar_vencedor() {
         reset_bola();
     } else if (cpu_pontos >= max_pontos) {
         exibir_mensagem("CPU WINS");
-        exibir_mensagem("GAME OVER");
+        
+
+        ssd1306_fill(&ssd, false);
+        ssd1306_draw_string(&ssd, "GAME OVER", 30, 30);
+        ssd1306_send_data(&ssd);
+        buzz(300,500);
+        
+        buzz(250,500);
+        buzz(100,250);
         player_pontos = 0;
         cpu_pontos = 0;
         reset_bola();
     }
 }
+
+
+
 
 void func() {
     // Leitura do joystick nos eixos X e Y
@@ -102,24 +154,25 @@ void func() {
         ball_dy = offset / 3;
     }
     
-    // Movimento do oponente baseado na posição da bola
+    // CPU segue a bola normalmente
     int opponent_y = ball_y - 4;
     if (opponent_y < 8) opponent_y = 8;
     if (opponent_y > 48) opponent_y = 48;
     
-    // Colisão com a barra do oponente
-    if (ball_x >= 107 && ball_y + 2 >= opponent_y && ball_y <= opponent_y + 8) {
-        if (cpu_rebatidas < 6) {
+    // CPU decide errar na terceira rebatida
+    if (cpu_rebatidas >= 3 && ball_x >= 85) {
+        cpu_deixando_passar = true;
+        opponent_y = (ball_y > 30) ? 48 : 8; // Move para longe ANTES da colisão
+    }
+    
+    if (!cpu_deixando_passar) {
+        // Colisão com a barra do oponente
+        if (ball_x >= 107 && ball_y + 2 >= opponent_y && ball_y <= opponent_y + 8) {
             ball_x = 107;
             ball_dx = -ball_dx;
             int offset = ball_y - (opponent_y + 4);
             ball_dy = (offset / 3) + (rand() % 3 - 1);
             cpu_rebatidas++;
-        } else {
-           
-            player_pontos++;
-            exibir_mensagem("CPU ERROU!");
-            reset_bola();
         }
     }
     
