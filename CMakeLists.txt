@@ -35,7 +35,7 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(pingpong pingpong.c c/ssd1306.c c/func.c c/inicia.c)
+add_executable(pingpong pingpong.c c/ssd1306.c c/func.c c/inicia.c c/menu.c c/biblio.c)
 
 pico_set_program_name(pingpong "pingpong")
 pico_set_program_version(pingpong "0.1")
@@ -59,10 +59,13 @@ target_link_libraries(pingpong
         hardware_i2c
         hardware_adc
         hardware_pwm
+        hardware_pio
         
         )
 
 pico_add_extra_outputs(pingpong)
+
+pico_generate_pio_header(pingpong ${CMAKE_CURRENT_LIST_DIR}/ws2812.pio)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 

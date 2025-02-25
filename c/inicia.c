@@ -15,8 +15,7 @@ void inicia()
     // Configura os pinos dos LEDs (Vermelho, Verde e Azul) como saída
     gpio_init(pinR);
     gpio_set_dir(pinR, GPIO_OUT);
-    gpio_init(pinG);
-    gpio_set_dir(pinG, GPIO_OUT);
+    
     gpio_init(pinB);
     gpio_set_dir(pinB, GPIO_OUT);
 
@@ -29,6 +28,8 @@ void inicia()
     adc_init();
     adc_gpio_init(JOYSTICK_X_PIN); 
     adc_gpio_init(JOYSTICK_Y_PIN); 
+
+ 
 
 
 }

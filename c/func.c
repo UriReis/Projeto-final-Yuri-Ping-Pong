@@ -8,6 +8,7 @@
 #include "include/ssd1306.h"
 #include "include/font.h"
 #include "define.h"
+#include "bibliopio.h"
 
 #define BUZZER_PIN 21 // Porta associada ao Buzzer
 
@@ -15,12 +16,18 @@ ssd1306_t ssd; // Estrutura para controlar o display OLED
 
 int ball_x = 64, ball_y = 32;
 int ball_dx = 1, ball_dy = 1;
-float velocimulti = 1.0;
+volatile float velocimulti = 1.0;
 int player_pontos = 0;
 int cpu_pontos = 0;
 const int max_pontos = 3;
 int cpu_rebatidas = 0; // Contador de rebatidas da CPU
 bool cpu_deixando_passar = false;
+
+
+
+
+
+extern int a ;
 
 // Inicializa o PWM para o buzzer
 void buzzer_init() {
@@ -50,14 +57,7 @@ void buzz(uint freq, uint tempo) {
     pwm_set_enabled(slice_num, false);
 }
 
-// Desativa o PWM do buzzer completamente
-/*void buzzer_stop() {
-    uint slice_num = pwm_gpio_to_slice_num(BUZZER_PIN);
-    pwm_set_enabled(slice_num, false);
-    gpio_set_function(BUZZER_PIN, GPIO_FUNC_SIO);
-    gpio_set_dir(BUZZER_PIN, GPIO_OUT);
-    gpio_put(BUZZER_PIN, 0);
-}*/
+
 
 // Função de interrupção para aumentar a velocidade
 bool repeating_timer_callback(struct repeating_timer *t) {
@@ -82,12 +82,22 @@ void inii2() {
     add_repeating_timer_ms(1000, repeating_timer_callback, NULL, &timer);
 }
 
-void exibir_mensagem(const char *msg) {
+void exibir_mensagem(const char *msg, int x, int y) {
     ssd1306_fill(&ssd, false);
-    ssd1306_draw_string(&ssd, msg, 30, 30);
+    ssd1306_draw_string(&ssd, msg, x, y);
     ssd1306_send_data(&ssd);
     sleep_ms(3000);
 }
+
+void exibir_menu(const char *msg, int x, int y){
+    ssd1306_draw_string(&ssd, msg, x, y);
+    ssd1306_rect(&ssd, 3, 3, 122, 58, true, false);
+    ssd1306_send_data(&ssd);
+
+    
+}
+
+
 void reset_bola() {
     ball_x = 64;
     ball_y = 32;
@@ -100,24 +110,38 @@ void reset_bola() {
 
 void verificar_vencedor() {
     if (player_pontos >= max_pontos) {
-        exibir_mensagem("PLAYER WINS");
+        set_one_led(0, 0, 200, 1);
+        exibir_mensagem("PLAYER WINS",30,30);
+        limpa_led(0, 0, 0);
+
         player_pontos = 0;
         cpu_pontos = 0;
-        reset_bola();
-    } else if (cpu_pontos >= max_pontos) {
-        exibir_mensagem("CPU WINS");
-        
 
         ssd1306_fill(&ssd, false);
-        ssd1306_draw_string(&ssd, "GAME OVER", 30, 30);
-        ssd1306_send_data(&ssd);
+        a = 0;
+
+        reset_bola();
+    } else if (cpu_pontos >= max_pontos) {
+        set_one_led(200, 0, 0, 0);
+        exibir_mensagem("CPU WINS",30,30);
+        
+        
+        exibir_mensagem("GAME OVER",30,30);
+        
         buzz(300,500);
+        limpa_led(0, 0, 0);
         
         buzz(250,500);
         buzz(100,250);
         player_pontos = 0;
         cpu_pontos = 0;
+
         reset_bola();
+        
+        ssd1306_fill(&ssd, false);
+        a = 0;
+
+        
     }
 }
 
@@ -127,7 +151,13 @@ void verificar_vencedor() {
 void func() {
     // Leitura do joystick nos eixos X e Y
     adc_select_input(0);
+    
+    
     uint16_t vrxvalue_you = adc_read();
+
+    
+
+
     int pos_y = 28 - ((vrxvalue_you - 2048) * 28) / 2048;
     if (pos_y < 8) pos_y = 8;
     if (pos_y > 48) pos_y = 48;
@@ -179,15 +209,23 @@ void func() {
     // Se a bola passar do jogador ou do oponente, adiciona ponto e reinicia
     if (ball_x < 2) {
         cpu_pontos++;
-        exibir_mensagem("PONTO CPU");
+        gpio_put(pinR, true);
+        set_one_led(200, 0, 0, 0);
+        exibir_mensagem("PONTO CPU",30,30);
+        gpio_put(pinR, false);
+        limpa_led(0, 0, 0);
         reset_bola();
     }
     if (ball_x > 122) {
         player_pontos++;
-        exibir_mensagem("PONTO P1");
+        gpio_put(pinB, true);
+        set_one_led(0, 0, 200, 1);
+        exibir_mensagem("PONTO P1",30,30);
+        limpa_led(0, 0, 0);
+        gpio_put(pinB, false);
         reset_bola();
     }
-    verificar_vencedor();
+    
     
     // Atualiza o display com o placar
     ssd1306_fill(&ssd, false);
@@ -199,4 +237,6 @@ void func() {
     ssd1306_draw_string(&ssd, "V", 116, opponent_y);
     ssd1306_draw_string(&ssd, "X", ball_x, ball_y);
     ssd1306_send_data(&ssd);
+
+    verificar_vencedor();
 }
