@@ -2,6 +2,9 @@
 
 Aluno: Yuri Silva Reis
 
+Título do projeto:Jogo Pong com Controle via Joystick e Exibição OLED na RP2040.
+
+
 Matrícula: TIC370101506
 
 - Pong no Raspberry Pi Pico
