@@ -12,29 +12,35 @@
 #include "menu.h"
 #include "bibliopio.h"
 
-volatile int a=0;
+// Variável global volátil para indicar o estado do jogo
+volatile int a = 0; // a = 0 → Jogo no menu | a = 1 → Jogo em execução
 
-int main()
-{
 
+int main() {
+    // Inicializa a comunicação serial padrão (para debugging, se necessário)
     stdio_init_all(); 
 
-    inicia();  // Chama a função de inicialização geral do sistema (configuração de GPIOs, ADC, etc.)
-    inii2();
+    // Chama a função de inicialização geral do sistema (configuração de GPIOs, ADC, etc.)
+    inicia();  
 
-    pio();
+    // Inicializa a comunicação I2C e configura o display OLED
+    inii2();   
 
+    // Inicializa a matriz de LEDs utilizando o PIO (Programmable I/O)
+    pio();  
 
-
+    // Loop principal do programa
     while (true) {
-        menu();
-        
-        while(a == 1){
 
-            func();
-            sleep_ms(10);
+        // Exibe o menu inicial e aguarda o jogador iniciar o jogo
+        menu(); 
+        
+        // Quando o jogador inicia o jogo, executa a lógica do Pong
+        while (a == 1) {
+            func(); // Função responsável pela lógica do jogo
+            sleep_ms(10); 
         }
         
-      sleep_ms(10); 
+        sleep_ms(10); 
     }
 }

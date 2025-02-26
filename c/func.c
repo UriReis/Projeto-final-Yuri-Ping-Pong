@@ -187,7 +187,7 @@ void func() {
     if (opponent_y > 48) opponent_y = 48;
     
     // CPU decide errar na terceira rebatida
-    if (cpu_rebatidas >= 4 && ball_x >= 85) {
+    if (cpu_rebatidas >= 8 && ball_x >= 85) {
         cpu_deixando_passar = true;
         opponent_y = (ball_y > 30) ? 48 : 8; // Move para longe ANTES da colisão
     }
