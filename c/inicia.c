@@ -12,7 +12,7 @@ void inicia()
     gpio_set_dir(Botao_A, GPIO_IN);
     gpio_pull_up(Botao_A);
 
-    // Configura os pinos dos LEDs (Vermelho, Verde e Azul) como saída
+    // Configura os pinos dos LEDs (Vermelho e Azul) como saída
     gpio_init(pinR);
     gpio_set_dir(pinR, GPIO_OUT);
     

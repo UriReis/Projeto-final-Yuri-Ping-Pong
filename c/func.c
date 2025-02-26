@@ -18,7 +18,7 @@ int ball_x = 64, ball_y = 32;
 int ball_dx = 1, ball_dy = 1;
 volatile float velocimulti = 1.0;
 int player_pontos = 0;
-int cpu_pontos = 0;
+int cpu_pontos = 0; 
 const int max_pontos = 3;
 int cpu_rebatidas = 0; // Contador de rebatidas da CPU
 bool cpu_deixando_passar = false;
@@ -135,12 +135,9 @@ void verificar_vencedor() {
         buzz(100,250);
         player_pontos = 0;
         cpu_pontos = 0;
-
         reset_bola();
-        
         ssd1306_fill(&ssd, false);
         a = 0;
-
         
     }
 }
@@ -190,7 +187,7 @@ void func() {
     if (opponent_y > 48) opponent_y = 48;
     
     // CPU decide errar na terceira rebatida
-    if (cpu_rebatidas >= 3 && ball_x >= 85) {
+    if (cpu_rebatidas >= 4 && ball_x >= 85) {
         cpu_deixando_passar = true;
         opponent_y = (ball_y > 30) ? 48 : 8; // Move para longe ANTES da colisão
     }
@@ -234,7 +231,7 @@ void func() {
     sprintf(placar, "%d - %d", player_pontos, cpu_pontos);
     ssd1306_draw_string(&ssd, placar, 50, 0);
     ssd1306_draw_string(&ssd, "Z", 5, pos_y);
-    ssd1306_draw_string(&ssd, "V", 116, opponent_y);
+    ssd1306_draw_string(&ssd, "H", 116, opponent_y);
     ssd1306_draw_string(&ssd, "X", ball_x, ball_y);
     ssd1306_send_data(&ssd);
 
